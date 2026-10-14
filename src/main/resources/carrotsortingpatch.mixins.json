@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "io.github.countyclaaw4.CarrotCraftSortingPatch.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "plugin": "io.github.countyclaaw4.CarrotCraftSortingPatch.mixin.CarrotSortingPatchMixinPlugin",
+  "client": [
+    "AbstractContainerScreenMixin",
+    "ipn.IpnAreaTypesMixin",
+    "ipn.IpnContainerClickerMixin",
+    "clientsort.ClientSortOperatorMixin",
+    "nemos.NemosLockedSlotMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
