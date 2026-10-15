@@ -1,7 +1,8 @@
 # CarrotCraft Sorting Patch
 
 CarrotCraft の保管庫 GUI で、インベントリソート Mod のソートやアイテム移動から操作用スロットを保護する、クライアント専用 Fabric Mod です。
-
+> [!NOTE]
+> AIによって生成されたコード及びドキュメントが含まれています。
 ## 目次
 
 - [機能](#機能)
