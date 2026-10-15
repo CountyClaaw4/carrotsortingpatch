@@ -1,4 +1,4 @@
-package io.github.countyclaaw4.CarrotCraftSortingPatch.mixin;
+package io.github.countyclaaw4.carrotcraftsortingpatch.mixin;
 
 import net.fabricmc.loader.api.FabricLoader;
 import org.objectweb.asm.tree.ClassNode;

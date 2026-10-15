@@ -1,8 +1,8 @@
-package io.github.countyclaaw4.CarrotCraftSortingPatch.interceptor;
+package io.github.countyclaaw4.carrotcraftsortingpatch.interceptor;
 
-import io.github.countyclaaw4.CarrotCraftSortingPatch.interceptor.clientsort.ClientSortInterceptor;
-import io.github.countyclaaw4.CarrotCraftSortingPatch.interceptor.ipn.IpnInterceptor;
-import io.github.countyclaaw4.CarrotCraftSortingPatch.interceptor.nemos.NemosInterceptor;
+import io.github.countyclaaw4.carrotcraftsortingpatch.interceptor.clientsort.ClientSortInterceptor;
+import io.github.countyclaaw4.carrotcraftsortingpatch.interceptor.ipn.IpnInterceptor;
+import io.github.countyclaaw4.carrotcraftsortingpatch.interceptor.nemos.NemosInterceptor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -22,6 +22,10 @@ class InterceptorRegistryTest {
         NemosInterceptor nemos = new NemosInterceptor();
         assertEquals("nemos_inventory_sorting", nemos.getModId());
 
+        InterceptorRegistry.register(ipn);
+        InterceptorRegistry.register(clientSort);
+        InterceptorRegistry.register(nemos);
+
         // 保護対象範囲: 45〜53
         for (int i = 0; i < 45; i++) {
             assertFalse(ipn.shouldProtectSlot(i));
@@ -35,5 +39,7 @@ class InterceptorRegistryTest {
         assertFalse(ipn.shouldProtectSlot(54));
         assertFalse(clientSort.shouldProtectSlot(54));
         assertFalse(nemos.shouldProtectSlot(54));
+        assertTrue(InterceptorRegistry.shouldProtectSlot(nemos.getModId(), 45));
+        assertFalse(InterceptorRegistry.shouldProtectSlot(nemos.getModId(), 54));
     }
 }

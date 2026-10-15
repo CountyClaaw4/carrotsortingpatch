@@ -1,7 +1,7 @@
-package io.github.countyclaaw4.CarrotCraftSortingPatch.interceptor.ipn;
+package io.github.countyclaaw4.carrotcraftsortingpatch.interceptor.ipn;
 
-import io.github.countyclaaw4.CarrotCraftSortingPatch.CarrotSortingPatch;
-import io.github.countyclaaw4.CarrotCraftSortingPatch.interceptor.SortInterceptor;
+import io.github.countyclaaw4.carrotcraftsortingpatch.CarrotSortingPatch;
+import io.github.countyclaaw4.carrotcraftsortingpatch.interceptor.SortInterceptor;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 

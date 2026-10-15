@@ -1,8 +1,10 @@
-package io.github.countyclaaw4.CarrotCraftSortingPatch.mixin.ipn;
+package io.github.countyclaaw4.carrotcraftsortingpatch.mixin.ipn;
 
-import io.github.countyclaaw4.CarrotCraftSortingPatch.CarrotSortingPatch;
-import io.github.countyclaaw4.CarrotCraftSortingPatch.condition.ServerCondition;
-import io.github.countyclaaw4.CarrotCraftSortingPatch.condition.VaultGuiDetector;
+import io.github.countyclaaw4.carrotcraftsortingpatch.CarrotSortingPatch;
+import io.github.countyclaaw4.carrotcraftsortingpatch.condition.ServerCondition;
+import io.github.countyclaaw4.carrotcraftsortingpatch.condition.VaultGuiDetector;
+import io.github.countyclaaw4.carrotcraftsortingpatch.interceptor.InterceptorRegistry;
+import io.github.countyclaaw4.carrotcraftsortingpatch.interceptor.ipn.IpnInterceptor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -46,7 +48,7 @@ public class IpnAreaTypesMixin {
             }
 
             // コンテナ領域内インデックス 45〜53 を除外
-            if (VaultGuiDetector.isProtectedContainerSlot(containerSlotIndex)) {
+            if (InterceptorRegistry.shouldProtectSlot(IpnInterceptor.MOD_ID, containerSlotIndex)) {
                 containerSlotIndex++;
                 continue;
             }

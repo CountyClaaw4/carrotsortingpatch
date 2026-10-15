@@ -1,9 +1,9 @@
-package io.github.countyclaaw4.CarrotCraftSortingPatch;
+package io.github.countyclaaw4.carrotcraftsortingpatch;
 
-import io.github.countyclaaw4.CarrotCraftSortingPatch.interceptor.InterceptorRegistry;
-import io.github.countyclaaw4.CarrotCraftSortingPatch.interceptor.clientsort.ClientSortInterceptor;
-import io.github.countyclaaw4.CarrotCraftSortingPatch.interceptor.ipn.IpnInterceptor;
-import io.github.countyclaaw4.CarrotCraftSortingPatch.interceptor.nemos.NemosInterceptor;
+import io.github.countyclaaw4.carrotcraftsortingpatch.interceptor.InterceptorRegistry;
+import io.github.countyclaaw4.carrotcraftsortingpatch.interceptor.clientsort.ClientSortInterceptor;
+import io.github.countyclaaw4.carrotcraftsortingpatch.interceptor.ipn.IpnInterceptor;
+import io.github.countyclaaw4.carrotcraftsortingpatch.interceptor.nemos.NemosInterceptor;
 import net.fabricmc.api.ClientModInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

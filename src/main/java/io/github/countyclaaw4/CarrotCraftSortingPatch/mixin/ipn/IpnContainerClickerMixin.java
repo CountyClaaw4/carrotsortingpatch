@@ -1,8 +1,10 @@
-package io.github.countyclaaw4.CarrotCraftSortingPatch.mixin.ipn;
+package io.github.countyclaaw4.carrotcraftsortingpatch.mixin.ipn;
 
-import io.github.countyclaaw4.CarrotCraftSortingPatch.CarrotSortingPatch;
-import io.github.countyclaaw4.CarrotCraftSortingPatch.condition.ServerCondition;
-import io.github.countyclaaw4.CarrotCraftSortingPatch.condition.VaultGuiDetector;
+import io.github.countyclaaw4.carrotcraftsortingpatch.CarrotSortingPatch;
+import io.github.countyclaaw4.carrotcraftsortingpatch.condition.ServerCondition;
+import io.github.countyclaaw4.carrotcraftsortingpatch.condition.VaultGuiDetector;
+import io.github.countyclaaw4.carrotcraftsortingpatch.interceptor.InterceptorRegistry;
+import io.github.countyclaaw4.carrotcraftsortingpatch.interceptor.ipn.IpnInterceptor;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerInput;
 import org.spongepowered.asm.mixin.Mixin;
@@ -26,7 +28,7 @@ public class IpnContainerClickerMixin {
         }
 
         int containerSlotIndex = VaultGuiDetector.getContainerSlotIndex(container, slotId);
-        if (VaultGuiDetector.isProtectedContainerSlot(containerSlotIndex)) {
+        if (InterceptorRegistry.shouldProtectSlot(IpnInterceptor.MOD_ID, containerSlotIndex)) {
             CarrotSortingPatch.LOGGER.warn("[CarrotSortingPatch] IPNによる保護スロットへの自動クリックを遮断しました: slotId={}, containerSlotIndex={}, action={}",
                     slotId, containerSlotIndex, actionType);
             ci.cancel();

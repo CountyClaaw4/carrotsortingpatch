@@ -1,4 +1,4 @@
-package io.github.countyclaaw4.CarrotCraftSortingPatch.interceptor;
+package io.github.countyclaaw4.carrotcraftsortingpatch.interceptor;
 
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import org.slf4j.Logger;
@@ -29,6 +29,25 @@ public final class InterceptorRegistry {
      */
     public static synchronized List<SortInterceptor> getInterceptors() {
         return Collections.unmodifiableList(new ArrayList<>(INTERCEPTORS));
+    }
+
+    /**
+     * 指定されたModの保護ポリシーでコンテナ内スロットを判定します。
+     */
+    public static synchronized boolean shouldProtectSlot(String modId, int containerSlotIndex) {
+        for (SortInterceptor interceptor : INTERCEPTORS) {
+            if (!interceptor.getModId().equals(modId)) {
+                continue;
+            }
+
+            try {
+                return interceptor.shouldProtectSlot(containerSlotIndex);
+            } catch (Throwable t) {
+                LOGGER.error("[CarrotSortingPatch] スロット保護判定中にエラーが発生しました: " + modId, t);
+                return false;
+            }
+        }
+        return false;
     }
 
     /**

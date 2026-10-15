@@ -1,4 +1,4 @@
-package io.github.countyclaaw4.CarrotCraftSortingPatch.condition;
+package io.github.countyclaaw4.carrotcraftsortingpatch.condition;
 
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
@@ -11,6 +11,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.CustomData;
 
+import java.util.Arrays;
+import java.util.IdentityHashMap;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 public final class VaultGuiDetector {
@@ -161,6 +164,36 @@ public final class VaultGuiDetector {
         }
 
         return -1;
+    }
+
+    /**
+     * 複数スロットのコンテナ内インデックスを、メニューを一度走査して取得します。
+     * メニューに含まれないスロットやプレイヤーインベントリのスロットは -1 になります。
+     */
+    public static int[] getContainerSlotIndices(AbstractContainerMenu menu, Slot[] slots) {
+        if (slots == null) {
+            return new int[0];
+        }
+
+        int[] indices = new int[slots.length];
+        Arrays.fill(indices, -1);
+        if (menu == null || slots.length == 0) {
+            return indices;
+        }
+
+        Map<Slot, Integer> indexBySlot = new IdentityHashMap<>();
+        int containerIndex = 0;
+        for (Slot slot : menu.slots) {
+            if (!(slot.container instanceof Inventory)) {
+                indexBySlot.put(slot, containerIndex++);
+            }
+        }
+
+        for (int i = 0; i < slots.length; i++) {
+            Integer index = indexBySlot.get(slots[i]);
+            indices[i] = index == null ? -1 : index;
+        }
+        return indices;
     }
 
     /**

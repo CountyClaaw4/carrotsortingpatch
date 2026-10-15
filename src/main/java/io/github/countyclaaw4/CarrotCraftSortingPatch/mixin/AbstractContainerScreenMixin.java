@@ -1,9 +1,9 @@
-package io.github.countyclaaw4.CarrotCraftSortingPatch.mixin;
+package io.github.countyclaaw4.carrotcraftsortingpatch.mixin;
 
-import io.github.countyclaaw4.CarrotCraftSortingPatch.CarrotSortingPatch;
-import io.github.countyclaaw4.CarrotCraftSortingPatch.condition.ServerCondition;
-import io.github.countyclaaw4.CarrotCraftSortingPatch.condition.VaultGuiDetector;
-import io.github.countyclaaw4.CarrotCraftSortingPatch.interceptor.InterceptorRegistry;
+import io.github.countyclaaw4.carrotcraftsortingpatch.CarrotSortingPatch;
+import io.github.countyclaaw4.carrotcraftsortingpatch.condition.ServerCondition;
+import io.github.countyclaaw4.carrotcraftsortingpatch.condition.VaultGuiDetector;
+import io.github.countyclaaw4.carrotcraftsortingpatch.interceptor.InterceptorRegistry;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import org.spongepowered.asm.mixin.Final;

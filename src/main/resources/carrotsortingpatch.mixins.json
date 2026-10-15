@@ -1,9 +1,9 @@
 {
   "required": true,
   "minVersion": "0.8",
-  "package": "io.github.countyclaaw4.CarrotCraftSortingPatch.mixin",
+  "package": "io.github.countyclaaw4.carrotcraftsortingpatch.mixin",
   "compatibilityLevel": "JAVA_25",
-  "plugin": "io.github.countyclaaw4.CarrotCraftSortingPatch.mixin.CarrotSortingPatchMixinPlugin",
+  "plugin": "io.github.countyclaaw4.carrotcraftsortingpatch.mixin.CarrotSortingPatchMixinPlugin",
   "client": [
     "AbstractContainerScreenMixin",
     "ipn.IpnAreaTypesMixin",

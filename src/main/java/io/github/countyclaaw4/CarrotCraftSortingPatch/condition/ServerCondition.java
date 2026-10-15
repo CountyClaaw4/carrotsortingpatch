@@ -1,4 +1,4 @@
-package io.github.countyclaaw4.CarrotCraftSortingPatch.condition;
+package io.github.countyclaaw4.carrotcraftsortingpatch.condition;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ServerData;

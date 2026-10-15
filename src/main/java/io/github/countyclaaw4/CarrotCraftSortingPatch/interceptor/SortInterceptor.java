@@ -1,4 +1,4 @@
-package io.github.countyclaaw4.CarrotCraftSortingPatch.interceptor;
+package io.github.countyclaaw4.carrotcraftsortingpatch.interceptor;
 
 import net.minecraft.world.inventory.AbstractContainerMenu;
 
