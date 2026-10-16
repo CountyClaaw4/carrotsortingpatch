@@ -1,0 +1,25 @@
+modLoader="javafml"
+loaderVersion="${neoforge_loader_version_range}"
+license="MIT"
+
+[[mods]]
+modId="carrotsortingpatch"
+version="${version}"
+displayName="CarrotCraft Sorting Patch"
+description='''CarrotCraftのエンダーチェストGUIでUI行を保護するクライアントMod'''
+features={java_version="[25,)"}
+
+[[mixins]]
+config="carrotsortingpatch.mixins.json"
+
+[[dependencies.carrotsortingpatch]]
+modId="neoforge"
+type="required"
+versionRange="[26.1.0.19-beta,)"
+side="CLIENT"
+
+[[dependencies.carrotsortingpatch]]
+modId="minecraft"
+type="required"
+versionRange="${minecraft_version_range}"
+side="CLIENT"

@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "carrotsortingpatch",
+  "version": "${version}",
+  "name": "CarrotCraft Sorting Patch",
+  "description": "CarrotCraftのエンダーチェストGUIでUI行を保護するクライアントMod",
+  "authors": [
+    "CountyClaw4",
+    "Gemini",
+    "Claude"
+  ],
+  "contact": {},
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "io.github.countyclaaw4.carrotcraftsortingpatch.CarrotSortingPatchFabric"
+    ]
+  },
+  "mixins": [
+    "carrotsortingpatch.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.19.0",
+    "minecraft": "${minecraft_version_range}",
+    "java": ">=25"
+  }
+}

@@ -1,0 +1,9 @@
+build/
+.git/
+.gradle/
+.sources/
+logs/
+fabric/.gradle/
+fabric/logs/
+fabric/build/
+neoforge/build/
