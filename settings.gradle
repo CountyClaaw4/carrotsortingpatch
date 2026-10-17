@@ -1,8 +1,26 @@
 pluginManagement {
     repositories {
+        // プラグインは、それぞれの公式リポジトリから、そのグループのものだけを取得する
         maven {
             name = 'Fabric'
             url = 'https://maven.fabricmc.net/'
+            content {
+                includeGroupAndSubgroups('net.fabricmc')
+            }
+        }
+        maven {
+            name = 'NeoForged'
+            url = 'https://maven.neoforged.net/releases'
+            content {
+                includeGroupAndSubgroups('net.neoforged')
+            }
+        }
+        maven {
+            name = 'MinecraftForge'
+            url = 'https://maven.minecraftforge.net/'
+            content {
+                includeGroupAndSubgroups('net.minecraftforge')
+            }
         }
         mavenCentral()
         gradlePluginPortal()
@@ -11,4 +29,5 @@ pluginManagement {
 
 rootProject.name = 'carrotsortingpatch'
 
-include 'fabric', 'neoforge'
+// 難読化なしの 26.x 向け（modern）と、難読化ありの 1.21.11 向け（legacy）をローダーごとに分けてビルドする
+include 'fabric', 'fabric-legacy', 'neoforge', 'neoforge-legacy', 'forge', 'forge-legacy'
