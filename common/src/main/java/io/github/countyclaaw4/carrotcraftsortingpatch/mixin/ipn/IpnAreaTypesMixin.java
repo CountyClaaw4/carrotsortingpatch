@@ -1,5 +1,6 @@
 package io.github.countyclaaw4.carrotcraftsortingpatch.mixin.ipn;
 
+import com.llamalad7.mixinextras.sugar.Local;
 import io.github.countyclaaw4.carrotcraftsortingpatch.CarrotSortingPatch;
 import io.github.countyclaaw4.carrotcraftsortingpatch.condition.ServerCondition;
 import io.github.countyclaaw4.carrotcraftsortingpatch.condition.SlotLayout;
@@ -16,7 +17,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * Inventory Profiles Next が「コンテナ側の操作対象スロット」を組み立てた結果から、保護スロットを外す。
@@ -27,7 +27,7 @@ import java.util.Set;
 public class IpnAreaTypesMixin {
 
     @Inject(method = "fillSlots", at = @At("RETURN"), remap = false, require = 0)
-    private void carrotSortingPatch$afterFillSlots(Set<?> types, List<Slot> vanillaSlots, List<Integer> slotIndices, CallbackInfo ci) {
+    private void carrotSortingPatch$afterFillSlots(CallbackInfo ci, @Local(argsOnly = true, index = 3) List<Integer> slotIndices) {
         try {
             if (slotIndices.isEmpty() || !ServerCondition.isTargetServer()) {
                 return;
@@ -38,13 +38,13 @@ public class IpnAreaTypesMixin {
                 return;
             }
             AbstractContainerMenu menu = mc.player.containerMenu;
-            // IPN が渡した一覧が、いま開いているエンダーチェスト画面のものと一致する時だけ
-            if (vanillaSlots.size() != menu.slots.size() || !VaultGuiDetector.isVaultGui(menu)) {
+            if (!VaultGuiDetector.isVaultGui(menu)
+                    || slotIndices.stream().anyMatch(position -> position < 0 || position >= menu.slots.size())) {
                 return;
             }
 
-            // slotIndices の値は vanillaSlots（メニュー）内の位置。そのコンテナ内番号が保護対象なら外す
-            int[] containerIndices = SlotLayout.containerIndices(VaultGuiDetector.playerSlotFlags(vanillaSlots));
+            // slotIndices の値はメニュー内の位置。そのコンテナ内番号が保護対象なら外す
+            int[] containerIndices = SlotLayout.containerIndices(VaultGuiDetector.playerSlotFlags(menu.slots));
             int before = slotIndices.size();
             slotIndices.removeIf(position -> position >= 0 && position < containerIndices.length
                     && InterceptorRegistry.shouldProtectSlot(IpnInterceptor.MOD_ID, containerIndices[position]));
