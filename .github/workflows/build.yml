@@ -191,19 +191,23 @@ jobs:
           sha256sum release/*.jar | sed 's#release/##' > release/SHA256SUMS.txt
           cat > release/RELEASE_NOTES.md <<EOF
           ## どの jar を使うか
-
-          ローダーと Minecraft のバージョンに合う jar をダウンロードしてください。
-
-          | ローダー | Minecraft | ダウンロード |
-          |---|---|---|
-          | Fabric | 26.1-26.3 | [jar]($(asset_url "$fabric_modern")) |
-          | NeoForge | 26.1-26.3 | [jar]($(asset_url "$neoforge_modern")) |
-          | Forge | 26.1-26.3 | [jar]($(asset_url "$forge_modern")) |
-          | Fabric | 1.21.11 | [jar]($(asset_url "$fabric_legacy")) |
-          | NeoForge | 1.21.11 | [jar]($(asset_url "$neoforge_legacy")) |
-          | Forge | 1.21.11 | [jar]($(asset_url "$forge_legacy")) |
-
-          SHA256SUMS.txt と照合してから使用してください。
+          
+          使うローダーと Minecraft に合ったものを 1 つ選んで、\`mods\` フォルダーに入れてください。
+          
+          | Minecraft | Fabric | NeoForge | Forge |
+          |---|---|---|---|
+          | 1.21.11（Java 21） | [${fabric_legacy}]($(asset_url "$fabric_legacy")) | [${neoforge_legacy}]($(asset_url "$neoforge_legacy")) | [${forge_legacy}]($(asset_url "$forge_legacy")) |
+          | 26.1 ～ 26.3（Java 25） | [${fabric_modern}]($(asset_url "$fabric_modern")) | [${neoforge_modern}]($(asset_url "$neoforge_modern")) | [${forge_modern}]($(asset_url "$forge_modern")) |
+          
+          守れるソート Mod は、Inventory Profiles Next と ClientSort です（ClientSort は Fabric と NeoForge のみ）。それ以外でも、クリックを直接送る Mod は止められます。詳しい仕組みと制限は README を見てください。
+          
+          ## 確認方法
+          
+          この jar は GitHub Actions がソースからビルドしたものです。\`SHA256SUMS.txt\` と照合できます。
+          
+          \`\`\`bash
+          sha256sum -c SHA256SUMS.txt
+          \`\`\`
           EOF
       - name: 下書きのリリースを作る（公開は手動で確認してから）
         env:
