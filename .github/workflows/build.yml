@@ -1,7 +1,7 @@
 name: build
 
-# push / PR: 全ローダー × 全対応バージョンでビルドとテストを回す。
-# v* タグ: GitHub 上でビルドした jar を「下書きのリリース」に添付する（公開は手動）。
+# push / PR: 全ローダー × 全対応バージョンを並列にビルドしてテストする。
+# v* タグ: テスト済みの jar を下書きリリースに添付する（公開は手動）。
 
 on:
   push:
@@ -9,7 +9,6 @@ on:
     tags: ['v*']
   pull_request:
 
-# 既定は読み取り専用。書き込みが要るのはリリース作成のジョブだけ。
 permissions:
   contents: read
 
@@ -23,14 +22,50 @@ jobs:
           persist-credentials: false
       - uses: gradle/actions/wrapper-validation@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
 
-  modern:
-    name: 26.x (${{ matrix.mc }})
+  build-and-test:
+    name: ${{ matrix.project }} (${{ matrix.mc }})
     needs: validate-wrapper
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        mc: ['26.1.2', '26.2', '26.3']
+        include:
+          - project: fabric
+            mc: '26.1.2'
+            distribution: true
+          - project: fabric
+            mc: '26.2'
+            distribution: false
+          - project: fabric
+            mc: '26.3'
+            distribution: false
+          - project: neoforge
+            mc: '26.1.2'
+            distribution: true
+          - project: neoforge
+            mc: '26.2'
+            distribution: false
+          - project: neoforge
+            mc: '26.3'
+            distribution: false
+          - project: forge
+            mc: '26.1.2'
+            distribution: true
+          - project: forge
+            mc: '26.2'
+            distribution: false
+          - project: forge
+            mc: '26.3'
+            distribution: false
+          - project: fabric-legacy
+            mc: '1.21.11'
+            distribution: true
+          - project: neoforge-legacy
+            mc: '1.21.11'
+            distribution: true
+          - project: forge-legacy
+            mc: '1.21.11'
+            distribution: true
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -39,38 +74,32 @@ jobs:
         with:
           distribution: temurin
           java-version: '25'
-      - name: Fabric / NeoForge / Forge をビルドしてテスト
-        run: ./gradlew --no-daemon :fabric:build :neoforge:build :forge:build -Pmc=${{ matrix.mc }}
+      - name: ビルドとテスト
+        run: ./gradlew --no-daemon --parallel :${{ matrix.project }}:build -Pmc=${{ matrix.mc }}
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: startsWith(github.ref, 'refs/tags/v') && matrix.distribution
+        with:
+          name: release-${{ matrix.project }}
+          path: ${{ matrix.project }}/build/libs/*.jar
+          if-no-files-found: error
 
-  legacy:
-    name: 1.21.11
-    needs: validate-wrapper
+  release-assets:
+    name: リリース成果物とノートの作成
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build-and-test
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          distribution: temurin
-          java-version: '25'
-      - name: Fabric / NeoForge / Forge をビルドしてテスト
-        run: ./gradlew --no-daemon :fabric-legacy:build :neoforge-legacy:build :forge-legacy:build
-
-  release-jars:
-    name: 配布用 jar の作成
-    needs: [modern, legacy]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
-        with:
-          distribution: temurin
-          java-version: '25'
-      - name: タグと mod_version が一致しているか確認（v1.1.0 なら mod_version=1.1.0）
-        if: startsWith(github.ref, 'refs/tags/v')
+          pattern: release-*
+          path: release/
+          merge-multiple: true
+      - name: タグと mod_version が一致しているか確認
         env:
           TAG: ${{ github.ref_name }}
         run: |
@@ -79,28 +108,53 @@ jobs:
             echo "タグ ${TAG} と gradle.properties の mod_version (${version}) が違います" >&2
             exit 1
           fi
-      - name: 6 構成の jar を集めて SHA-256 を作る
-        run: ./gradlew --no-daemon collectReleaseJars
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: release-jars
-          path: build/release/
-          if-no-files-found: error
+      - name: SHA-256 とダウンロードリンク付きリリースノートを生成
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
 
-  release:
-    name: 下書きリリースの作成
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: release-jars
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: release-jars
-          path: release/
+          find_jar() {
+            local pattern="$1"
+            local matches=(release/$pattern)
+            if [[ ${#matches[@]} -ne 1 || ! -f "${matches[0]}" ]]; then
+              echo "jar が1つ見つかりません: $pattern" >&2
+              return 1
+            fi
+            printf '%s' "${matches[0]##*/}"
+          }
+
+          asset_url() {
+            printf 'https://github.com/%s/releases/download/%s/%s' "$GITHUB_REPOSITORY" "$TAG" "$1"
+          }
+
+          fabric_modern="$(find_jar '*-fabric-*+mc26.1-26.3.jar')"
+          neoforge_modern="$(find_jar '*-neoforge-*+mc26.1-26.3.jar')"
+          forge_modern="$(find_jar '*-forge-*+mc26.1-26.3.jar')"
+          fabric_legacy="$(find_jar '*-fabric-*+mc1.21.11.jar')"
+          neoforge_legacy="$(find_jar '*-neoforge-*+mc1.21.11.jar')"
+          forge_legacy="$(find_jar '*-forge-*+mc1.21.11.jar')"
+
+          sha256sum release/*.jar | sed 's#release/##' > release/SHA256SUMS.txt
+          cat > release/RELEASE_NOTES.md <<EOF
+          ## どの jar を使うか
+
+          ローダーと Minecraft のバージョンに合う jar をダウンロードしてください。
+
+          | ローダー | Minecraft | ダウンロード |
+          |---|---|---|
+          | Fabric | 26.1-26.3 | [jar]($(asset_url "$fabric_modern")) |
+          | NeoForge | 26.1-26.3 | [jar]($(asset_url "$neoforge_modern")) |
+          | Forge | 26.1-26.3 | [jar]($(asset_url "$forge_modern")) |
+          | Fabric | 1.21.11 | [jar]($(asset_url "$fabric_legacy")) |
+          | NeoForge | 1.21.11 | [jar]($(asset_url "$neoforge_legacy")) |
+          | Forge | 1.21.11 | [jar]($(asset_url "$forge_legacy")) |
+
+          SHA256SUMS.txt と照合してから使用してください。
+          EOF
       - name: 下書きのリリースを作る（公開は手動で確認してから）
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
-        run: gh release create "$TAG" release/* --repo "$GITHUB_REPOSITORY" --draft --title "$TAG" --notes "SHA256SUMS.txt と照合してから使ってください。"
+        run: gh release create "$TAG" release/*.jar release/SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --draft --title "$TAG" --notes-file release/RELEASE_NOTES.md
