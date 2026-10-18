@@ -8,6 +8,16 @@ on:
     branches: [main]
     tags: ['v*']
   pull_request:
+  workflow_dispatch:
+    inputs:
+      cache_operation:
+        description: キャッシュの操作
+        type: choice
+        options:
+          - rebuild
+          - delete
+        default: rebuild
+        required: true
 
 permissions:
   contents: read
@@ -22,9 +32,27 @@ jobs:
           persist-credentials: false
       - uses: gradle/actions/wrapper-validation@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
 
+  cache-maintenance:
+    name: キャッシュの削除（手動）
+    if: github.event_name == 'workflow_dispatch'
+    needs: validate-wrapper
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: GitHub Actions キャッシュをすべて削除
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh cache delete --all --succeed-on-no-caches --repo "$GITHUB_REPOSITORY"
+
   build-and-test:
     name: ${{ matrix.era }} (${{ matrix.mc }})
-    needs: validate-wrapper
+    needs: [validate-wrapper, cache-maintenance]
+    if: >-
+      always() &&
+      needs.validate-wrapper.result == 'success' &&
+      (needs.cache-maintenance.result == 'success' || needs.cache-maintenance.result == 'skipped') &&
+      (github.event_name != 'workflow_dispatch' || inputs.cache_operation == 'rebuild')
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -53,6 +81,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
         with:
           gradle-home-cache-strict-match: false
+          cache-read-only: ${{ github.ref != 'refs/heads/main' && !(github.event_name == 'workflow_dispatch' && inputs.cache_operation == 'rebuild') }}
       - uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: .gradle/loom-cache
@@ -108,7 +137,7 @@ jobs:
 
   release-assets:
     name: リリース成果物とノートの作成
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name != 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/v')
     needs: build-and-test
     runs-on: ubuntu-latest
     permissions:
