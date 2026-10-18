@@ -120,5 +120,7 @@ JDK 25 を用意し、プロジェクトのルートで実行してください�
 
 ### CI とリリース
 
-GitHub Actions（`.github/workflows/build.yml`）が、push と PR のたびに全ローダー × 全対応バージョンのビルドとテストを実行します。
-`v1.1.0` のようなタグを push すると、GitHub 上でビルドした jar と `SHA256SUMS.txt` が下書きのリリースに添付されます（公開は手動です）。配布する jar は、ここで作ったものだけにしてください。
+GitHub Actions（`.github/workflows/build.yml`）が、push と PR のたびにMinecraftの版ごとにジョブを分け、各ジョブ内で Fabric・NeoForge・Forge を並列にビルド・テストします（modern 3版とlegacyの計4ジョブ）。
+Actions の `build` ワークフローは手動実行にも対応しており、`rebuild` を選ぶと既存キャッシュを削除して全構成を再ビルドし、`delete` を選ぶとキャッシュ削除だけを行います。
+タグのリリース対象となる構成は、テスト時に作った jar をそのまま再利用するため、配布用の再ビルドはありません。
+`v1.1.0` のようなタグを push すると、6 種類の jar と `SHA256SUMS.txt` が下書きリリースに添付されます。リリースノートにはローダーと Minecraft 版に対応したダウンロードリンクの表が自動生成されます（公開は手動です）。配布する jar は、ここで作ったものだけにしてください。
