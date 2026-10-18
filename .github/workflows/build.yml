@@ -87,15 +87,14 @@ jobs:
 
           if [ '${{ matrix.release }}' = 'true' ]; then
             ./gradlew --no-daemon --build-cache collectReleaseJars -Pmc=${{ matrix.mc }}
-            sha256sum build/release/*.jar | tee /tmp/pre-test.sha256
-            sha256sum -c build/release/SHA256SUMS.txt
+            (cd build/release && sha256sum ./*.jar | tee /tmp/pre-test.sha256 && sha256sum -c SHA256SUMS.txt)
           fi
 
           ./gradlew --no-daemon --parallel --configure-on-demand --build-cache \
             :fabric:test :neoforge:test :forge:test -Pmc=${{ matrix.mc }}
 
           if [ '${{ matrix.release }}' = 'true' ]; then
-            sha256sum build/release/*.jar | diff /tmp/pre-test.sha256 -
+            (cd build/release && sha256sum ./*.jar | diff /tmp/pre-test.sha256 -)
           fi
 
       - name: legacy をビルド・収集・検証
@@ -108,15 +107,14 @@ jobs:
 
           if [ '${{ matrix.release }}' = 'true' ]; then
             ./gradlew --no-daemon --build-cache collectReleaseJars
-            sha256sum build/release/*.jar | tee /tmp/pre-test.sha256
-            sha256sum -c build/release/SHA256SUMS.txt
+            (cd build/release && sha256sum ./*.jar | tee /tmp/pre-test.sha256 && sha256sum -c SHA256SUMS.txt)
           fi
 
           ./gradlew --no-daemon --parallel --configure-on-demand --build-cache \
             :fabric-legacy:test :neoforge-legacy:test :forge-legacy:test
 
           if [ '${{ matrix.release }}' = 'true' ]; then
-            sha256sum build/release/*.jar | diff /tmp/pre-test.sha256 -
+            (cd build/release && sha256sum ./*.jar | diff /tmp/pre-test.sha256 -)
           fi
 
       - uses: actions/cache/save@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
@@ -184,10 +182,7 @@ jobs:
           fi
 
       - name: ダウンロードした成果物の SHA-256 を Gradle 生成の値と照合
-        run: |
-          # Gradle が build/release/SHA256SUMS.txt に記録した値と
-          # ダウンロード後に独自計算した値を突き合わせる
-          sha256sum -c release/SHA256SUMS.txt
+        run: (cd release && sha256sum -c SHA256SUMS.txt)
 
       - name: ダウンロードリンク付きリリースノートを生成
         env:
