@@ -23,47 +23,23 @@ jobs:
       - uses: gradle/actions/wrapper-validation@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
 
   build-and-test:
-    name: ${{ matrix.project }} (${{ matrix.mc }})
+    name: ${{ matrix.era }} (${{ matrix.mc }})
     needs: validate-wrapper
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         include:
-          - project: fabric
+          - era: modern
             mc: '26.1.2'
             distribution: true
-          - project: fabric
+          - era: modern
             mc: '26.2'
             distribution: false
-          - project: fabric
+          - era: modern
             mc: '26.3'
             distribution: false
-          - project: neoforge
-            mc: '26.1.2'
-            distribution: true
-          - project: neoforge
-            mc: '26.2'
-            distribution: false
-          - project: neoforge
-            mc: '26.3'
-            distribution: false
-          - project: forge
-            mc: '26.1.2'
-            distribution: true
-          - project: forge
-            mc: '26.2'
-            distribution: false
-          - project: forge
-            mc: '26.3'
-            distribution: false
-          - project: fabric-legacy
-            mc: '1.21.11'
-            distribution: true
-          - project: neoforge-legacy
-            mc: '1.21.11'
-            distribution: true
-          - project: forge-legacy
+          - era: legacy
             mc: '1.21.11'
             distribution: true
     steps:
@@ -74,13 +50,60 @@ jobs:
         with:
           distribution: temurin
           java-version: '25'
-      - name: ビルドとテスト
-        run: ./gradlew --no-daemon --parallel --configure-on-demand :${{ matrix.project }}:build -Pmc=${{ matrix.mc }}
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: startsWith(github.ref, 'refs/tags/v') && matrix.distribution
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
         with:
-          name: release-${{ matrix.project }}
-          path: ${{ matrix.project }}/build/libs/*.jar
+          gradle-home-cache-strict-match: false
+      - uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        with:
+          path: .gradle/loom-cache
+          key: ${{ runner.os }}-loom-${{ matrix.mc }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties', 'gradle.properties', 'versions/*.properties') }}
+      - uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        if: matrix.era == 'modern'
+        with:
+          path: |
+            .gradle/9.7.1
+            neoforge/build/tmp/createMinecraftArtifacts
+            neoforge/build/moddev/artifacts
+          key: ${{ runner.os }}-moddev-modern-${{ matrix.mc }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties', 'gradle.properties', 'versions/*.properties') }}
+      - uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        if: matrix.era == 'legacy'
+        with:
+          path: |
+            .gradle/9.7.1
+            neoforge-legacy/build/tmp/createMinecraftArtifacts
+            neoforge-legacy/build/moddev/artifacts
+          key: ${{ runner.os }}-moddev-legacy-${{ matrix.mc }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties', 'gradle.properties', 'versions/*.properties') }}
+      - uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        with:
+          path: .gradle/mavenizer
+          key: ${{ runner.os }}-mavenizer-${{ matrix.mc }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties', 'gradle.properties', 'versions/*.properties') }}
+      - name: modern の全ローダーをビルドしてテスト
+        if: matrix.era == 'modern'
+        run: ./gradlew --no-daemon --parallel --configure-on-demand :fabric:build :neoforge:build :forge:build -Pmc=${{ matrix.mc }}
+      - name: legacy の全ローダーをビルドしてテスト
+        if: matrix.era == 'legacy'
+        run: ./gradlew --no-daemon --parallel --configure-on-demand :fabric-legacy:build :neoforge-legacy:build :forge-legacy:build
+      - name: modern の配布jarを集める
+        if: startsWith(github.ref, 'refs/tags/v') && matrix.era == 'modern' && matrix.distribution
+        run: |
+          mkdir -p release-artifacts
+          cp fabric/build/libs/*.jar neoforge/build/libs/*.jar forge/build/libs/*.jar release-artifacts/
+      - name: legacy の配布jarを集める
+        if: startsWith(github.ref, 'refs/tags/v') && matrix.era == 'legacy' && matrix.distribution
+        run: |
+          mkdir -p release-artifacts
+          cp fabric-legacy/build/libs/*.jar neoforge-legacy/build/libs/*.jar forge-legacy/build/libs/*.jar release-artifacts/
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: startsWith(github.ref, 'refs/tags/v') && matrix.era == 'modern' && matrix.distribution
+        with:
+          name: release-modern
+          path: release-artifacts/*.jar
+          if-no-files-found: error
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: startsWith(github.ref, 'refs/tags/v') && matrix.era == 'legacy' && matrix.distribution
+        with:
+          name: release-legacy
+          path: release-artifacts/*.jar
           if-no-files-found: error
 
   release-assets:
