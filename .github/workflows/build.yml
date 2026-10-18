@@ -1,24 +1,10 @@
 name: build
 
-# push / PR: 全ローダー × 全対応バージョンを並列にビルドしてテストする。
-# v* タグ: テスト済みの jar を下書きリリースに添付する（公開は手動）。
-
 on:
   push:
     branches: [main]
     tags: ['v*']
   pull_request:
-  workflow_dispatch:
-    inputs:
-      cache_operation:
-        description: キャッシュの操作
-        type: choice
-        options:
-          - build
-          - rebuild
-          - delete
-        default: build
-        required: true
 
 permissions:
   contents: read
@@ -33,26 +19,9 @@ jobs:
           persist-credentials: false
       - uses: gradle/actions/wrapper-validation@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
 
-  cache-maintenance:
-    name: キャッシュの削除（手動）
-    if: github.event_name == 'workflow_dispatch' && inputs.cache_operation != 'build'
-    runs-on: ubuntu-latest
-    permissions:
-      actions: write
-    steps:
-      - name: GitHub Actions キャッシュをすべて削除
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh cache delete --all --succeed-on-no-caches --repo "$GITHUB_REPOSITORY"
-
   build-and-test:
     name: ${{ matrix.era }} (${{ matrix.mc }})
-    needs: [validate-wrapper, cache-maintenance]
-    if: >-
-      always() &&
-      needs.validate-wrapper.result == 'success' &&
-      (needs.cache-maintenance.result == 'success' || needs.cache-maintenance.result == 'skipped') &&
-      (github.event_name != 'workflow_dispatch' || inputs.cache_operation != 'delete')
+    needs: validate-wrapper
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -62,16 +31,16 @@ jobs:
         include:
           - era: modern
             mc: '26.1.2'
-            distribution: true
+            release: true
           - era: modern
             mc: '26.2'
-            distribution: false
+            release: false
           - era: modern
             mc: '26.3'
-            distribution: false
+            release: false
           - era: legacy
             mc: '1.21.11'
-            distribution: true
+            release: true
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -83,63 +52,111 @@ jobs:
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
         with:
           gradle-home-cache-strict-match: false
-          cache-read-only: ${{ github.ref != 'refs/heads/main' && !(github.event_name == 'workflow_dispatch' && (inputs.cache_operation == 'build' || inputs.cache_operation == 'rebuild')) }}
-      - uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+
+      - uses: actions/cache/restore@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: .gradle/loom-cache
           key: ${{ runner.os }}-loom-${{ matrix.mc }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties', 'gradle.properties', 'versions/*.properties') }}
-      - uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+      - uses: actions/cache/restore@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         if: matrix.era == 'modern'
         with:
           path: |
             neoforge/build/tmp/createMinecraftArtifacts
             neoforge/build/moddev/artifacts
           key: ${{ runner.os }}-moddev-modern-${{ matrix.mc }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties', 'gradle.properties', 'versions/*.properties') }}
-      - uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+      - uses: actions/cache/restore@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         if: matrix.era == 'legacy'
         with:
           path: |
             neoforge-legacy/build/tmp/createMinecraftArtifacts
             neoforge-legacy/build/moddev/artifacts
           key: ${{ runner.os }}-moddev-legacy-${{ matrix.mc }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties', 'gradle.properties', 'versions/*.properties') }}
-      - uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+      - uses: actions/cache/restore@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: .gradle/mavenizer
           key: ${{ runner.os }}-mavenizer-${{ matrix.mc }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties', 'gradle.properties', 'versions/*.properties') }}
-      - name: modern の全ローダーをビルドしてテスト
+
+      - name: modern をビルド・収集・検証
         if: matrix.era == 'modern'
-        run: ./gradlew --no-daemon --parallel --configure-on-demand --build-cache :fabric:build :neoforge:build :forge:build -Pmc=${{ matrix.mc }}
-      - name: legacy の全ローダーをビルドしてテスト
+        run: |
+          set -euo pipefail
+
+          ./gradlew --no-daemon --parallel --configure-on-demand --build-cache \
+            :fabric:remapOrJar :neoforge:remapOrJar :forge:remapOrJar -Pmc=${{ matrix.mc }}
+
+          if [ '${{ matrix.release }}' = 'true' ]; then
+            ./gradlew --no-daemon --build-cache collectReleaseJars -Pmc=${{ matrix.mc }}
+            sha256sum build/release/*.jar | tee /tmp/pre-test.sha256
+            sha256sum -c build/release/SHA256SUMS.txt
+          fi
+
+          ./gradlew --no-daemon --parallel --configure-on-demand --build-cache \
+            :fabric:test :neoforge:test :forge:test -Pmc=${{ matrix.mc }}
+
+          if [ '${{ matrix.release }}' = 'true' ]; then
+            sha256sum build/release/*.jar | diff /tmp/pre-test.sha256 -
+          fi
+
+      - name: legacy をビルド・収集・検証
         if: matrix.era == 'legacy'
-        run: ./gradlew --no-daemon --parallel --configure-on-demand --build-cache :fabric-legacy:build :neoforge-legacy:build :forge-legacy:build
-      - name: modern の配布jarを集める
-        if: startsWith(github.ref, 'refs/tags/v') && matrix.era == 'modern' && matrix.distribution
         run: |
-          mkdir -p release-artifacts
-          cp fabric/build/libs/*.jar neoforge/build/libs/*.jar forge/build/libs/*.jar release-artifacts/
-      - name: legacy の配布jarを集める
-        if: startsWith(github.ref, 'refs/tags/v') && matrix.era == 'legacy' && matrix.distribution
-        run: |
-          mkdir -p release-artifacts
-          cp fabric-legacy/build/libs/*.jar neoforge-legacy/build/libs/*.jar forge-legacy/build/libs/*.jar release-artifacts/
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: startsWith(github.ref, 'refs/tags/v') && matrix.era == 'modern' && matrix.distribution
+          set -euo pipefail
+
+          ./gradlew --no-daemon --parallel --configure-on-demand --build-cache \
+            :fabric-legacy:remapOrJar :neoforge-legacy:remapOrJar :forge-legacy:remapOrJar
+
+          if [ '${{ matrix.release }}' = 'true' ]; then
+            ./gradlew --no-daemon --build-cache collectReleaseJars
+            sha256sum build/release/*.jar | tee /tmp/pre-test.sha256
+            sha256sum -c build/release/SHA256SUMS.txt
+          fi
+
+          ./gradlew --no-daemon --parallel --configure-on-demand --build-cache \
+            :fabric-legacy:test :neoforge-legacy:test :forge-legacy:test
+
+          if [ '${{ matrix.release }}' = 'true' ]; then
+            sha256sum build/release/*.jar | diff /tmp/pre-test.sha256 -
+          fi
+
+      - uses: actions/cache/save@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        if: github.ref == 'refs/heads/main'
         with:
-          name: release-modern
-          path: release-artifacts/*.jar
-          if-no-files-found: error
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: startsWith(github.ref, 'refs/tags/v') && matrix.era == 'legacy' && matrix.distribution
+          path: .gradle/loom-cache
+          key: ${{ runner.os }}-loom-${{ matrix.mc }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties', 'gradle.properties', 'versions/*.properties') }}
+      - uses: actions/cache/save@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        if: github.ref == 'refs/heads/main' && matrix.era == 'modern'
         with:
-          name: release-legacy
-          path: release-artifacts/*.jar
+          path: |
+            neoforge/build/tmp/createMinecraftArtifacts
+            neoforge/build/moddev/artifacts
+          key: ${{ runner.os }}-moddev-modern-${{ matrix.mc }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties', 'gradle.properties', 'versions/*.properties') }}
+      - uses: actions/cache/save@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        if: github.ref == 'refs/heads/main' && matrix.era == 'legacy'
+        with:
+          path: |
+            neoforge-legacy/build/tmp/createMinecraftArtifacts
+            neoforge-legacy/build/moddev/artifacts
+          key: ${{ runner.os }}-moddev-legacy-${{ matrix.mc }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties', 'gradle.properties', 'versions/*.properties') }}
+      - uses: actions/cache/save@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        if: github.ref == 'refs/heads/main'
+        with:
+          path: .gradle/mavenizer
+          key: ${{ runner.os }}-mavenizer-${{ matrix.mc }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties', 'gradle.properties', 'versions/*.properties') }}
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: startsWith(github.ref, 'refs/tags/v') && matrix.release
+        with:
+          name: release-${{ matrix.era }}
+          path: build/release/
           if-no-files-found: error
 
   release-assets:
     name: リリース成果物とノートの作成
-    if: github.event_name != 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v')
     needs: build-and-test
     runs-on: ubuntu-latest
+    environment: release
     permissions:
       contents: write
     steps:
@@ -151,6 +168,7 @@ jobs:
           pattern: release-*
           path: release/
           merge-multiple: true
+
       - name: タグと mod_version が一致しているか確認
         env:
           TAG: ${{ github.ref_name }}
@@ -164,7 +182,14 @@ jobs:
             echo "タグ ${TAG} と gradle.properties の mod_version (${version}) が違います" >&2
             exit 1
           fi
-      - name: SHA-256 とダウンロードリンク付きリリースノートを生成
+
+      - name: ダウンロードした成果物の SHA-256 を Gradle 生成の値と照合
+        run: |
+          # Gradle が build/release/SHA256SUMS.txt に記録した値と
+          # ダウンロード後に独自計算した値を突き合わせる
+          sha256sum -c release/SHA256SUMS.txt
+
+      - name: ダウンロードリンク付きリリースノートを生成
         env:
           TAG: ${{ github.ref_name }}
         run: |
@@ -185,34 +210,34 @@ jobs:
             printf 'https://github.com/%s/releases/download/%s/%s' "$GITHUB_REPOSITORY" "$TAG" "$1"
           }
 
-          fabric_modern="$(find_jar '*-fabric-*+mc26.1-26.3.jar')" || exit 1
+          fabric_modern="$(find_jar '*-fabric-*+mc26.1-26.3.jar')"   || exit 1
           neoforge_modern="$(find_jar '*-neoforge-*+mc26.1-26.3.jar')" || exit 1
-          forge_modern="$(find_jar '*-forge-*+mc26.1-26.3.jar')" || exit 1
-          fabric_legacy="$(find_jar '*-fabric-*+mc1.21.11.jar')" || exit 1
-          neoforge_legacy="$(find_jar '*-neoforge-*+mc1.21.11.jar')" || exit 1
-          forge_legacy="$(find_jar '*-forge-*+mc1.21.11.jar')" || exit 1
+          forge_modern="$(find_jar '*-forge-*+mc26.1-26.3.jar')"      || exit 1
+          fabric_legacy="$(find_jar '*-fabric-*+mc1.21.11.jar')"      || exit 1
+          neoforge_legacy="$(find_jar '*-neoforge-*+mc1.21.11.jar')"  || exit 1
+          forge_legacy="$(find_jar '*-forge-*+mc1.21.11.jar')"        || exit 1
 
-          sha256sum release/*.jar | sed 's#release/##' > release/SHA256SUMS.txt
           cat > release/RELEASE_NOTES.md <<EOF
           ## どの jar を使うか
-          
+
           使うローダーと Minecraft に合ったものを 1 つ選んで、\`mods\` フォルダーに入れてください。
-          
+
           | Minecraft | Fabric | NeoForge | Forge |
           |---|---|---|---|
           | 1.21.11（Java 21） | [${fabric_legacy}]($(asset_url "$fabric_legacy")) | [${neoforge_legacy}]($(asset_url "$neoforge_legacy")) | [${forge_legacy}]($(asset_url "$forge_legacy")) |
           | 26.1 ～ 26.3（Java 25） | [${fabric_modern}]($(asset_url "$fabric_modern")) | [${neoforge_modern}]($(asset_url "$neoforge_modern")) | [${forge_modern}]($(asset_url "$forge_modern")) |
-          
+
           守れるソート Mod は、Inventory Profiles Next と ClientSort です（ClientSort は Fabric と NeoForge のみ）。それ以外でも、クリックを直接送る Mod は止められます。詳しい仕組みと制限は README を見てください。
-          
+
           ## 確認方法
-          
+
           この jar は GitHub Actions がソースからビルドしたものです。\`SHA256SUMS.txt\` と照合できます。
-          
+
           \`\`\`bash
           sha256sum -c SHA256SUMS.txt
           \`\`\`
           EOF
+
       - name: 下書きのリリースを作る（公開は手動で確認してから）
         env:
           GH_TOKEN: ${{ github.token }}
