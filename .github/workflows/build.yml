@@ -36,7 +36,6 @@ jobs:
   cache-maintenance:
     name: キャッシュの削除（手動）
     if: github.event_name == 'workflow_dispatch' && inputs.cache_operation != 'build'
-    needs: validate-wrapper
     runs-on: ubuntu-latest
     permissions:
       actions: write
@@ -55,6 +54,8 @@ jobs:
       (needs.cache-maintenance.result == 'success' || needs.cache-maintenance.result == 'skipped') &&
       (github.event_name != 'workflow_dispatch' || inputs.cache_operation != 'delete')
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -91,7 +92,6 @@ jobs:
         if: matrix.era == 'modern'
         with:
           path: |
-            .gradle/9.7.1
             neoforge/build/tmp/createMinecraftArtifacts
             neoforge/build/moddev/artifacts
           key: ${{ runner.os }}-moddev-modern-${{ matrix.mc }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties', 'gradle.properties', 'versions/*.properties') }}
@@ -99,7 +99,6 @@ jobs:
         if: matrix.era == 'legacy'
         with:
           path: |
-            .gradle/9.7.1
             neoforge-legacy/build/tmp/createMinecraftArtifacts
             neoforge-legacy/build/moddev/artifacts
           key: ${{ runner.os }}-moddev-legacy-${{ matrix.mc }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties', 'gradle.properties', 'versions/*.properties') }}
@@ -109,10 +108,10 @@ jobs:
           key: ${{ runner.os }}-mavenizer-${{ matrix.mc }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties', 'gradle.properties', 'versions/*.properties') }}
       - name: modern の全ローダーをビルドしてテスト
         if: matrix.era == 'modern'
-        run: ./gradlew --no-daemon --parallel --configure-on-demand :fabric:build :neoforge:build :forge:build -Pmc=${{ matrix.mc }}
+        run: ./gradlew --no-daemon --parallel --configure-on-demand --build-cache :fabric:build :neoforge:build :forge:build -Pmc=${{ matrix.mc }}
       - name: legacy の全ローダーをビルドしてテスト
         if: matrix.era == 'legacy'
-        run: ./gradlew --no-daemon --parallel --configure-on-demand :fabric-legacy:build :neoforge-legacy:build :forge-legacy:build
+        run: ./gradlew --no-daemon --parallel --configure-on-demand --build-cache :fabric-legacy:build :neoforge-legacy:build :forge-legacy:build
       - name: modern の配布jarを集める
         if: startsWith(github.ref, 'refs/tags/v') && matrix.era == 'modern' && matrix.distribution
         run: |
@@ -157,6 +156,10 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           version="$(grep '^mod_version=' gradle.properties | cut -d= -f2)"
+          if [ -z "$version" ]; then
+            echo "gradle.properties に mod_version が見つかりません" >&2
+            exit 1
+          fi
           if [ "v${version}" != "${TAG}" ]; then
             echo "タグ ${TAG} と gradle.properties の mod_version (${version}) が違います" >&2
             exit 1
@@ -182,12 +185,12 @@ jobs:
             printf 'https://github.com/%s/releases/download/%s/%s' "$GITHUB_REPOSITORY" "$TAG" "$1"
           }
 
-          fabric_modern="$(find_jar '*-fabric-*+mc26.1-26.3.jar')"
-          neoforge_modern="$(find_jar '*-neoforge-*+mc26.1-26.3.jar')"
-          forge_modern="$(find_jar '*-forge-*+mc26.1-26.3.jar')"
-          fabric_legacy="$(find_jar '*-fabric-*+mc1.21.11.jar')"
-          neoforge_legacy="$(find_jar '*-neoforge-*+mc1.21.11.jar')"
-          forge_legacy="$(find_jar '*-forge-*+mc1.21.11.jar')"
+          fabric_modern="$(find_jar '*-fabric-*+mc26.1-26.3.jar')" || exit 1
+          neoforge_modern="$(find_jar '*-neoforge-*+mc26.1-26.3.jar')" || exit 1
+          forge_modern="$(find_jar '*-forge-*+mc26.1-26.3.jar')" || exit 1
+          fabric_legacy="$(find_jar '*-fabric-*+mc1.21.11.jar')" || exit 1
+          neoforge_legacy="$(find_jar '*-neoforge-*+mc1.21.11.jar')" || exit 1
+          forge_legacy="$(find_jar '*-forge-*+mc1.21.11.jar')" || exit 1
 
           sha256sum release/*.jar | sed 's#release/##' > release/SHA256SUMS.txt
           cat > release/RELEASE_NOTES.md <<EOF
