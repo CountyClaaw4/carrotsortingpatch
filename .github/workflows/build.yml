@@ -75,7 +75,7 @@ jobs:
           distribution: temurin
           java-version: '25'
       - name: ビルドとテスト
-        run: ./gradlew --no-daemon --parallel :${{ matrix.project }}:build -Pmc=${{ matrix.mc }}
+        run: ./gradlew --no-daemon --parallel --configure-on-demand :${{ matrix.project }}:build -Pmc=${{ matrix.mc }}
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: startsWith(github.ref, 'refs/tags/v') && matrix.distribution
         with:
