@@ -29,7 +29,7 @@ dependencies {
 // Forge は jar マニフェストの MixinConfigs で Mixin 設定を読み込む
 jar {
     manifest {
-        attributes 'MixinConfigs': 'carrotsortingpatch.mixins.json'
+        attributes 'MixinConfigs': 'carrotsortingpatch.mixins.json,carrotsortingpatch-forge.mixins.json'
     }
 }
 

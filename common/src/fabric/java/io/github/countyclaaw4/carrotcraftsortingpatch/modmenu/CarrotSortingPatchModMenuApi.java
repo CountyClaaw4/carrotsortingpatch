@@ -2,11 +2,14 @@ package io.github.countyclaaw4.carrotcraftsortingpatch.modmenu;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.terraformersmc.modmenu.api.ConfigScreenFactory;
 import com.terraformersmc.modmenu.api.ModMenuApi;
 import com.terraformersmc.modmenu.api.UpdateChannel;
 import com.terraformersmc.modmenu.api.UpdateChecker;
 import com.terraformersmc.modmenu.api.UpdateInfo;
 import net.fabricmc.loader.api.FabricLoader;
+import io.github.countyclaaw4.carrotcraftsortingpatch.screen.UpdateConfigScreen;
+import io.github.countyclaaw4.carrotcraftsortingpatch.update.UpdateCoordinator;
 import net.minecraft.network.chat.Component;
 
 import java.io.IOException;
@@ -33,6 +36,14 @@ public final class CarrotSortingPatchModMenuApi implements ModMenuApi {
                 .map(mod -> mod.getMetadata().getVersion().getFriendlyString())
                 .orElse("0.0.0");
         return new GitHubReleaseUpdateChecker(currentVersion);
+    }
+
+    @Override
+    public ConfigScreenFactory<?> getModConfigScreenFactory() {
+        return parent -> {
+            UpdateCoordinator coordinator = UpdateCoordinator.getInstance();
+            return coordinator == null ? null : new UpdateConfigScreen(parent, coordinator.getConfig());
+        };
     }
 
     private static final class GitHubReleaseUpdateChecker implements UpdateChecker {

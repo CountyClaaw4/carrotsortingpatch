@@ -1,0 +1,21 @@
+{
+  "screen.carrotsortingpatch.first_launch.title": "CarrotSortingPatch — Initial Setup",
+  "screen.carrotsortingpatch.first_launch.desc1": "Thank you for installing CarrotSortingPatch!",
+  "screen.carrotsortingpatch.first_launch.desc2": "Please configure automatic update options below.",
+  "screen.carrotsortingpatch.first_launch.check_for_updates": "Check for updates and show notification in the mods list",
+  "screen.carrotsortingpatch.first_launch.auto_update": "Automatically download and replace on game exit",
+  "screen.carrotsortingpatch.first_launch.auto_update_warning": "Auto-update replaces the mod file when Minecraft exits. Keep a backup.",
+  "screen.carrotsortingpatch.download_update": "Download update",
+
+  "toast.carrotsortingpatch.update_available.title": "CarrotSortingPatch Update Available",
+  "toast.carrotsortingpatch.update_available.desc": "New version: %s — see the mods list for details",
+
+  "toast.carrotsortingpatch.download_start.title": "CarrotSortingPatch",
+  "toast.carrotsortingpatch.download_start.desc": "Downloading update…",
+
+  "toast.carrotsortingpatch.download_complete.title": "CarrotSortingPatch",
+  "toast.carrotsortingpatch.download_complete.desc": "Update downloaded. Restart the game to apply.",
+
+  "toast.carrotsortingpatch.download_failed.title": "CarrotSortingPatch",
+  "toast.carrotsortingpatch.download_failed.desc": "Failed to download update. Please update manually."
+}

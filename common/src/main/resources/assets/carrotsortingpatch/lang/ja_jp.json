@@ -1,0 +1,22 @@
+{
+  "screen.carrotsortingpatch.first_launch.title": "CarrotSortingPatch — 初回設定",
+  "screen.carrotsortingpatch.first_launch.desc1": "CarrotSortingPatch をインストールしていただきありがとうございます！",
+  "screen.carrotsortingpatch.first_launch.desc2": "自動更新に関する設定を選択してください。",
+  "screen.carrotsortingpatch.first_launch.check_for_updates": "更新を確認して通知する（MOD一覧の更新表示を含む）",
+  "screen.carrotsortingpatch.first_launch.auto_update": "更新があったら自動でダウンロードして終了時に入れ替える",
+  "screen.carrotsortingpatch.first_launch.auto_update_warning.description": "自動更新を有効にすると、外部からダウンロードしたファイルが自動的に実行されます。配布元が乗っ取られた場合などに不正なコードが実行されるリスクがあります。この機能が何か正確にわからない場合は無効にしておくことを推奨します。",
+  "screen.carrotsortingpatch.first_launch.auto_update_warning.title": "自動アップデートについて",
+  "screen.carrotsortingpatch.download_update": "更新をダウンロードして入れ替えを予約",
+
+  "toast.carrotsortingpatch.update_available.title": "CarrotSortingPatch 更新あり",
+  "toast.carrotsortingpatch.update_available.desc": "新バージョン: %s — MOD一覧を確認してください",
+
+  "toast.carrotsortingpatch.download_start.title": "CarrotSortingPatch",
+  "toast.carrotsortingpatch.download_start.desc": "更新をダウンロード中…",
+
+  "toast.carrotsortingpatch.download_complete.title": "CarrotSortingPatch",
+  "toast.carrotsortingpatch.download_complete.desc": "ダウンロード完了。次回起動時に自動的に入れ替えられます。",
+
+  "toast.carrotsortingpatch.download_failed.title": "CarrotSortingPatch",
+  "toast.carrotsortingpatch.download_failed.desc": "ダウンロードに失敗しました。手動で更新してください。"
+}

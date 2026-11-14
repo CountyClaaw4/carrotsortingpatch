@@ -7,6 +7,7 @@
     "AbstractContainerScreenMixin",
     "ClickGuardScreenMixin",
     "ClickGuardGameModeMixin",
+    "TitleScreenToastMixin",
     "ipn.IpnAreaTypesMixin",
     "clientsort.ClientSortOperatorMixin"
   ],

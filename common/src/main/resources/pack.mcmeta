@@ -1,0 +1,10 @@
+{
+  "pack": {
+    "description": "CarrotCraft Sorting Patch resources",
+    "pack_format": 14,
+    "supported_formats": {
+      "min_inclusive": 14,
+      "max_inclusive": 100
+    }
+  }
+}

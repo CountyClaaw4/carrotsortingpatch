@@ -1,6 +1,12 @@
 package io.github.countyclaaw4.carrotcraftsortingpatch;
 
 import io.github.countyclaaw4.carrotcraftsortingpatch.platform.ModLoader;
+import io.github.countyclaaw4.carrotcraftsortingpatch.modmenu.ForgeConfigScreenRegistration;
+import io.github.countyclaaw4.carrotcraftsortingpatch.update.ForgeUpdatePlatform;
+import io.github.countyclaaw4.carrotcraftsortingpatch.update.UpdateCoordinator;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
 
@@ -10,8 +16,12 @@ import net.minecraftforge.fml.common.Mod;
  */
 @Mod(CarrotSortingPatch.MOD_ID)
 public final class CarrotSortingPatchForge {
-    public CarrotSortingPatchForge() {
+    public CarrotSortingPatchForge(FMLJavaModLoadingContext context) {
         ModLoader.initialize(modId -> ModList.get().isLoaded(modId));
         CarrotSortingPatch.initialize();
+        if (FMLEnvironment.dist == Dist.CLIENT) {
+            UpdateCoordinator.init(new ForgeUpdatePlatform(context.getContainer()));
+            ForgeConfigScreenRegistration.register(context);
+        }
     }
 }

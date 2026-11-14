@@ -125,9 +125,32 @@ def expectedMixinTargets = [
         ],
 ]
 
+def titleScreenRenderMethod = (era == 'legacy')
+    ? 'render(Lnet/minecraft/client/gui/GuiGraphics;IIF)V'
+    : 'extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIF)V'
+expectedMixinTargets['net/minecraft/client/gui/screens/TitleScreen'] = ["method:${titleScreenRenderMethod}"]
+def screenTransitionMethod = (era == 'legacy')
+    ? 'setScreen(Lnet/minecraft/client/gui/screens/Screen;)V'
+    : 'setScreenAndShow(Lnet/minecraft/client/gui/screens/Screen;)V'
+expectedMixinTargets['net/minecraft/client/Minecraft'] = ["method:${screenTransitionMethod}"]
+
+if (loader == 'fabric') {
+    expectedMixinTargets['net/minecraft/client/gui/screens/TitleScreen'] = [
+            'method:init()V',
+    ]
+} else if (loader == 'forge') {
+    expectedMixinTargets['net/minecraftforge/fml/VersionChecker'] = [
+            'method:getResult(Lnet/minecraftforge/forgespi/language/IModInfo;)Lnet/minecraftforge/fml/VersionChecker$CheckResult;',
+    ]
+} else if (loader == 'neoforge') {
+    expectedMixinTargets['net/neoforged/fml/VersionChecker'] = [
+            'method:getResult(Lnet/neoforged/neoforgespi/language/IModInfo;)Lnet/neoforged/fml/VersionChecker$CheckResult;',
+    ]
+}
+
 tasks.register('verifyMixinTargets') {
     group = 'verification'
-    description = 'Mixin の対象がバニラの Minecraft に実在するか検証する'
+    description = 'Mixin の対象がビルド対象に実在するか検証する'
     def classpath = configurations.named('compileClasspath')
     inputs.files(classpath)
     doLast {
@@ -166,9 +189,9 @@ tasks.register('verifyMixinTargets') {
             }
         }
         if (!problems.isEmpty()) {
-            throw new GradleException("Mixin の対象が Minecraft ${vp.minecraft_version} に見つかりません:\n  " + problems.join('\n  '))
+            throw new GradleException("Mixin の対象が ${loader} / Minecraft ${vp.minecraft_version} に見つかりません:\n  " + problems.join('\n  '))
         }
-        println "Mixin の対象を確認しました (Minecraft ${vp.minecraft_version}, ${expectedMixinTargets.values().flatten().size()} 件)"
+        println "Mixin の対象を確認しました (${loader} / Minecraft ${vp.minecraft_version}, ${expectedMixinTargets.values().flatten().size()} 件)"
     }
 }
 

@@ -63,3 +63,25 @@ tasks.register('collectReleaseJars') {
         println sums
     }
 }
+
+tasks.register('collectLocalJars') {
+    group = 'distribution'
+    description = 'GitHub Actions以外で、配布用jarをbuild/libsに集める'
+    dependsOn allLoaders.collect { ":${it}:remapOrJar" }
+    onlyIf { System.getenv('GITHUB_ACTIONS') != 'true' }
+    doLast {
+        def dir = layout.buildDirectory.dir('libs').get().asFile
+        dir.mkdirs()
+        allLoaders.each { name ->
+            def jar = project(":${name}").ext.releaseJar.get().asFile
+            copy {
+                from jar
+                into dir
+            }
+        }
+    }
+}
+
+tasks.named('build') {
+    finalizedBy 'collectLocalJars'
+}
