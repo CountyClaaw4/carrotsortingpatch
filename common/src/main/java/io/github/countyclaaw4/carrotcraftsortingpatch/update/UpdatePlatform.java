@@ -64,4 +64,13 @@ public interface UpdatePlatform {
      * @param config 設定オブジェクト（ポップアップ内で編集・保存する）
      */
     void scheduleFirstLaunchPopup(UpdaterConfig config);
+
+    /**
+     * 更新が見つかったときに呼ばれるコールバックです。
+     * Minecraft のメインスレッドから呼ばれます。
+     *
+     * @param latestTag 最新リリースのタグ名（例: "v1.1.1"）
+     * @param changelogBody チェンジログの本文
+     */
+    void onUpdateFound(String latestTag, String changelogBody);
 }

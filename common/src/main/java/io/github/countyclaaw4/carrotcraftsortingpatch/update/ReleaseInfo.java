@@ -9,27 +9,30 @@ public final class ReleaseInfo {
     private final String downloadUrl;
     private final String fileName;
     private final String checksumUrl;
+    private final String body;
 
     public ReleaseInfo(String tagName, String downloadUrl, String fileName) {
-        this(tagName, downloadUrl, fileName, null);
+        this(tagName, downloadUrl, fileName, null, null);
     }
 
     public ReleaseInfo(String tagName, String downloadUrl, String fileName, String checksumUrl) {
+        this(tagName, downloadUrl, fileName, checksumUrl, null);
+    }
+
+    public ReleaseInfo(String tagName, String downloadUrl, String fileName,
+                       String checksumUrl, String body) {
         this.tagName     = tagName;
         this.downloadUrl = downloadUrl;
         this.fileName    = fileName;
         this.checksumUrl = checksumUrl;
+        this.body        = body;
     }
 
-    /** タグ名（例: "1.1.2"） */
-    public String getTagName() { return tagName; }
-
-    /** jar の直接ダウンロード URL */
+    public String getTagName()     { return tagName; }
     public String getDownloadUrl() { return downloadUrl; }
-
-    /** jar のファイル名 */
-    public String getFileName() { return fileName; }
-
-    /** チェックサム一覧の直接ダウンロード URL */
+    public String getFileName()    { return fileName; }
     public String getChecksumUrl() { return checksumUrl; }
+
+    /** リリース本文（Markdown）。無い場合は null */
+    public String getBody() { return body; }
 }

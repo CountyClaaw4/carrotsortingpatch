@@ -105,7 +105,7 @@ public final class UpdateCoordinator {
                     if (optInfo.isEmpty()) return;
                     ReleaseInfo info = optInfo.get();
                     latestRelease = info;
-
+                    platform.onUpdateFound(info.getTagName(), info.getBody());
                     // Minecraft スレッドへのマーシャリングはプラットフォーム実装側で行う
                     platform.showUpdateToast(info.getTagName());
 

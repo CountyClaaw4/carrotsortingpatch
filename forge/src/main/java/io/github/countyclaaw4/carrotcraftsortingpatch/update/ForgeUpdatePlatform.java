@@ -27,6 +27,11 @@ public final class ForgeUpdatePlatform implements UpdatePlatform {
     }
 
     @Override
+    public void onUpdateFound(String latestTag, String changelogBody) {
+        ForgeVersionCheckerBridge.publishOutdated(latestTag, changelogBody);
+    }
+
+    @Override
     public Optional<Path> getCurrentJarPath() {
         return Optional.of(container.getModInfo().getOwningFile().getFile().getFilePath());
     }

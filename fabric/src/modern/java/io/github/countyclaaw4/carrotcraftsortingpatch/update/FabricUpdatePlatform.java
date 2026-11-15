@@ -23,6 +23,11 @@ public final class FabricUpdatePlatform implements UpdatePlatform {
     }
 
     @Override
+    public void onUpdateFound(String latestTag, String changelogBody) {
+        // Fabric では VersionChecker 連携なし
+    }
+
+    @Override
     public Optional<Path> getCurrentJarPath() {
         return FabricLoader.getInstance()
                 .getModContainer(CarrotSortingPatch.MOD_ID)

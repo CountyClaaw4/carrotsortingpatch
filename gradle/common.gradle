@@ -143,9 +143,7 @@ if (loader == 'fabric') {
             'method:getResult(Lnet/minecraftforge/forgespi/language/IModInfo;)Lnet/minecraftforge/fml/VersionChecker$CheckResult;',
     ]
 } else if (loader == 'neoforge') {
-    expectedMixinTargets['net/neoforged/fml/VersionChecker'] = [
-            'method:getResult(Lnet/neoforged/neoforgespi/language/IModInfo;)Lnet/neoforged/fml/VersionChecker$CheckResult;',
-    ]
+    // VersionChecker Mixin は廃止（NeoForgeVersionCheckerBridge に移行）
 }
 
 tasks.register('verifyMixinTargets') {

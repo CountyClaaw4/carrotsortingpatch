@@ -4,6 +4,7 @@ import io.github.countyclaaw4.carrotcraftsortingpatch.CarrotSortingPatch;
 import io.github.countyclaaw4.carrotcraftsortingpatch.screen.FirstLaunchScreen;
 import io.github.countyclaaw4.carrotcraftsortingpatch.screen.TitleScreenToast;
 import net.minecraft.network.chat.Component;
+import net.minecraft.client.Minecraft;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.loading.FMLPaths;
 
@@ -40,34 +41,51 @@ public final class NeoForgeUpdatePlatform implements UpdatePlatform {
                 .orElse("0.0.0");
     }
 
+    @Override
+    public void onUpdateFound(String latestTag, String changelogBody) {
+        NeoForgeVersionCheckerBridge.publishOutdated(latestTag, changelogBody);
+    }
+
     // ---- トースト通知 ----
 
     @Override
     public void showUpdateToast(String newVersion) {
-        TitleScreenToast.show(
-            Component.translatable("toast.carrotsortingpatch.update_available.title"),
-            Component.translatable("toast.carrotsortingpatch.update_available.desc", newVersion));
+        Minecraft.getInstance().execute(() ->
+            TitleScreenToast.show(
+                Component.translatable("toast.carrotsortingpatch.update_available.title"),
+                Component.translatable("toast.carrotsortingpatch.update_available.desc", newVersion)
+            )
+        );
     }
 
     @Override
     public void showDownloadStartToast() {
-        TitleScreenToast.show(
-            Component.translatable("toast.carrotsortingpatch.download_start.title"),
-            Component.translatable("toast.carrotsortingpatch.download_start.desc"));
+        Minecraft.getInstance().execute(() ->
+            TitleScreenToast.show(
+                Component.translatable("toast.carrotsortingpatch.download_start.title"),
+                Component.translatable("toast.carrotsortingpatch.download_start.desc")
+            )
+        );
     }
 
     @Override
     public void showDownloadCompleteToast() {
-        TitleScreenToast.show(
-            Component.translatable("toast.carrotsortingpatch.download_complete.title"),
-            Component.translatable("toast.carrotsortingpatch.download_complete.desc"));
+        Minecraft.getInstance().execute(() ->
+            TitleScreenToast.show(
+                Component.translatable("toast.carrotsortingpatch.download_complete.title"),
+                Component.translatable("toast.carrotsortingpatch.download_complete.desc")
+            )
+        );
     }
 
     @Override
     public void showDownloadFailedToast() {
-        TitleScreenToast.show(
-            Component.translatable("toast.carrotsortingpatch.download_failed.title"),
-            Component.translatable("toast.carrotsortingpatch.download_failed.desc"));
+        Minecraft.getInstance().execute(() ->
+            TitleScreenToast.show(
+                Component.translatable("toast.carrotsortingpatch.download_failed.title"),
+                Component.translatable("toast.carrotsortingpatch.download_failed.desc")
+            )
+        );
     }
 
     // ---- 初回起動ポップアップ ----

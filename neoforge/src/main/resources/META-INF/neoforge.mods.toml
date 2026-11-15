@@ -14,9 +14,6 @@ description='''CarrotCraftのエンダーチェスト画面で、インベント
 [[mixins]]
 config="carrotsortingpatch.mixins.json"
 
-[[mixins]]
-config="carrotsortingpatch-neoforge.mixins.json"
-
 [[dependencies.carrotsortingpatch]]
 modId="neoforge"
 type="required"

@@ -158,6 +158,7 @@ public final class UpdateManager {
         if (tagName == null || tagName.isBlank()) {
             return Optional.empty();
         }
+        String releaseBody = extractReleaseBody(body);
 
         if (!VersionComparator.isNewer(currentVersion, tagName)) {
             CarrotSortingPatch.LOGGER.info("[CarrotSortingPatch] 最新バージョンを使用中です: {}", currentVersion);
@@ -196,7 +197,7 @@ public final class UpdateManager {
         if (downloadUrl != null && fileName != null && checksumUrl != null) {
             CarrotSortingPatch.LOGGER.info(
                     "[CarrotSortingPatch] 新バージョンを検出: {} (現在: {})", tagName, currentVersion);
-            return Optional.of(new ReleaseInfo(tagName, downloadUrl, fileName, checksumUrl));
+            return Optional.of(new ReleaseInfo(tagName, downloadUrl, fileName, checksumUrl, releaseBody));
         }
 
         CarrotSortingPatch.LOGGER.warn(
@@ -376,5 +377,78 @@ public final class UpdateManager {
     private static Path extractNewFileName(String tempName, Path oldJar) {
         // 旧 jar と同名で上書き（REPLACE_EXISTING を利用）
         return oldJar.getFileName();
+    }
+
+    /** トップレベルの "body" 文字列を正規表現なしで取り出す（長いリリースノート対策） */
+    private static String extractReleaseBody(String json) {
+        // "body": null
+        int key = indexOfJsonKey(json, "body");
+        if (key < 0) {
+            return null;
+        }
+        int i = key;
+        while (i < json.length() && Character.isWhitespace(json.charAt(i))) {
+            i++;
+        }
+        if (i + 4 <= json.length() && json.startsWith("null", i)) {
+            return null;
+        }
+        if (i >= json.length() || json.charAt(i) != '"') {
+            return null;
+        }
+        i++; // opening quote
+        StringBuilder out = new StringBuilder();
+        while (i < json.length()) {
+            char c = json.charAt(i++);
+            if (c == '"') {
+                break; // closing quote
+            }
+            if (c == '\\' && i < json.length()) {
+                char n = json.charAt(i++);
+                switch (n) {
+                    case 'n'  -> out.append('\n');
+                    case 'r'  -> out.append('\r');
+                    case 't'  -> out.append('\t');
+                    case '"'  -> out.append('"');
+                    case '\\' -> out.append('\\');
+                    case '/'  -> out.append('/');
+                    case 'u'  -> {
+                        if (i + 4 <= json.length()) {
+                            out.append((char) Integer.parseInt(json.substring(i, i + 4), 16));
+                            i += 4;
+                        }
+                    }
+                    default -> out.append(n);
+                }
+            } else {
+                out.append(c);
+            }
+        }
+        return out.toString();
+    }
+
+    /** "key"\s*:\s* の直後のインデックス。無ければ -1 */
+    private static int indexOfJsonKey(String json, String key) {
+        String needle = "\"" + key + "\"";
+        int from = 0;
+        while (from < json.length()) {
+            int at = json.indexOf(needle, from);
+            if (at < 0) {
+                return -1;
+            }
+            int i = at + needle.length();
+            while (i < json.length() && Character.isWhitespace(json.charAt(i))) {
+                i++;
+            }
+            if (i < json.length() && json.charAt(i) == ':') {
+                i++;
+                while (i < json.length() && Character.isWhitespace(json.charAt(i))) {
+                    i++;
+                }
+                return i;
+            }
+            from = at + 1;
+        }
+        return -1;
     }
 }
