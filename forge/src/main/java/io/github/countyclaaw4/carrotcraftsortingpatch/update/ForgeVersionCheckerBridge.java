@@ -81,15 +81,58 @@ public final class ForgeVersionCheckerBridge {
 
     private static Object findOwnModInfo() throws Exception {
         Class<?> modListClass = Class.forName("net.minecraftforge.fml.ModList");
+
+        Object optional = invokeGetModContainerById(modListClass, MOD_ID);
+        if (optional != null
+                && (boolean) optional.getClass().getMethod("isPresent").invoke(optional)) {
+            Object container = optional.getClass().getMethod("get").invoke(optional);
+            if (container != null) {
+                return container.getClass().getMethod("getModInfo").invoke(container);
+            }
+        }
+
+        // フォールバック: getMods() から探す
+        return findModInfoFromGetMods(modListClass);
+    }
+
+    /**
+     * 26.x: static getModContainerById(String)
+     * 1.21.x: ModList.get().getModContainerById(String)
+     */
+    private static Object invokeGetModContainerById(Class<?> modListClass, String modId)
+            throws Exception {
+        java.lang.reflect.Method m = modListClass.getMethod("getModContainerById", String.class);
+
+        if (java.lang.reflect.Modifier.isStatic(m.getModifiers())) {
+            // Forge 26.x
+            return m.invoke(null, modId);
+        }
+
+        // Forge 1.21.x
         Object modList = modListClass.getMethod("get").invoke(null);
-        Object optional = modListClass
-                .getMethod("getModContainerById", String.class)
-                .invoke(modList, MOD_ID);
-        if (!(boolean) optional.getClass().getMethod("isPresent").invoke(optional)) {
+        return m.invoke(modList, modId);
+    }
+
+    private static Object findModInfoFromGetMods(Class<?> modListClass) throws Exception {
+        java.lang.reflect.Method getMods = modListClass.getMethod("getMods");
+        Object mods;
+        if (java.lang.reflect.Modifier.isStatic(getMods.getModifiers())) {
+            mods = getMods.invoke(null);
+        } else {
+            Object modList = modListClass.getMethod("get").invoke(null);
+            mods = getMods.invoke(modList);
+        }
+
+        if (!(mods instanceof Iterable<?> list)) {
             return null;
         }
-        Object container = optional.getClass().getMethod("get").invoke(optional);
-        return container.getClass().getMethod("getModInfo").invoke(container);
+        for (Object mod : list) {
+            Object id = mod.getClass().getMethod("getModId").invoke(mod);
+            if (MOD_ID.equals(id)) {
+                return mod;
+            }
+        }
+        return null;
     }
 
     private static Object createCheckResult(
